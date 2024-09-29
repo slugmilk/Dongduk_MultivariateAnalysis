@@ -1,0 +1,60 @@
+---
+title: "20210838hw_02"
+output: html_document
+date: "2023-10-15"
+---
+
+```{r}
+library(tidyverse)
+#install.packages("ggfortify")
+library(ggfortify)
+#install.packages("factoextra")
+library(factoextra)
+```
+
+```{r}
+myprcompR <- function(X)
+{
+   R    <- cor(X)
+   eigR <- eigen(R)
+   V    <- eigR$vectors
+   L    <- diag(eigR$values)
+   Z    <- scale(X, center=TRUE, scale=TRUE)
+   Eta  <- Z %*% V
+   list(rotation=V, var=eigR$values, sdev=sqrt(eigR$values), x=Eta)
+}
+```
+```{r}
+install.packages("dplyr")
+library(dplyr)
+```
+```{r}
+library(readxl)
+DF <- read_excel('D:/job-adjetive.xlsx')
+X <- as.data.frame(DF)
+rownames(X) <- DF$job
+X <- X %>% dplyr::select(-job)
+```
+```{r}
+MprZ <- myprcompR(X)
+MprcompZ <- prcomp(X, center=TRUE, scale=TRUE)
+```
+```{r}
+summary(MprcompZ)
+plot(MprcompZ)
+```
+```{r}
+apply(MprcompZ$x, 2, var)
+apply(MprZ$x, 2, var)
+```
+```{r}
+biplot(MprcompZ)
+```
+```{r}
+library(factoextra)
+install.packages("purrr")
+library(ggfortify)
+autoplot(MprcompZ, data=DF, scale=0, loadings=TRUE, loadings.label=TRUE, label=TRUE)
+#가장 우아한 직업: Doctor, 그렇지 못하 직업: Cartoonist
+#가장 바쁜 직업: Journalist, 그렇지 못한 직업: Monk
+```

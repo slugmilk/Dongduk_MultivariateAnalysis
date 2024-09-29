@@ -1,0 +1,199 @@
+---
+title: "20210838hw"
+output:
+  html_document: default
+  pdf_document: default
+date: "2023-09-18"
+---
+## 행렬과제
+### 행렬 기본 계산
+### 코사인 유사도, 공분산, 상관행렬
+
+```{r}
+nrm <- function(x)sqrt(sum(x^2))
+X <- matrix(c(
+164,54,29,
+172,60,31,
+165,58,33,
+154,53,27,
+170,50,20), byrow=TRUE, nc=3)
+dimnames(X) <- list(c('Km','Le','Pk','Ch','Jg'), c('ht','wt','ws'))
+X
+```
+
+```{r}
+###행 정규화된 X
+rnrm <- apply(X, 1, nrm)
+rnrm
+
+###행간 코사인 유사도 행렬
+Xtilde <- sweep(X, 1, STATS=rnrm, FUN='/')
+apply(Xtilde, 1, nrm)
+
+Xtilde %*% t(Xtilde)
+```
+가장 유사한 두 명을 찾으시오: Le와 Ch가 가장 유사하다.
+```{r}
+###열 정규화된 X
+cnrm <- apply(X, 2, nrm)
+cnrm
+
+###열간 코사인 유사도 행렬
+Xbreve <- sweep(X, 2, STATS=cnrm, FUN='/')
+apply(Xbreve, 1, nrm)
+
+t(Xbreve) %*% Xbreve
+```
+가장 유사한 두 변수를 찾으시오: ht와 wt가 가장 유사하다.
+```{r}
+###중심화된 X
+CX <- scale(X, center=TRUE, scale=FALSE)
+CX
+###표준화된 X
+Z <- scale(X, center=TRUE, scale=TRUE)
+Z
+###공분산 행렬
+S <- cov(X)
+S
+###상관 행렬
+R <- cor(X)
+R
+```
+가장 상관관계가 높은 두 변수를 찾으시오: wt, ws
+
+## LU분해, 열공간
+## 연립방정식, 가우스 소거법
+```{r}
+### 다음 A를 LU 분해 하시오
+A <- matrix(c(
+1,3,2,
+2,8,3,
+3,10,6
+), byrow=TRUE, nr=3)
+
+E1 <- diag(3)
+E1[2,1] <- -2
+E1
+E1A <- E1 %*% A
+E1A
+
+E2 <- diag(3)
+E2[3,1] <- -3
+E2
+E2E1A <- E2 %*% E1A
+
+E3 <- diag(3)
+E3[3,2] <- -1/2
+E3
+E3E2E1A <- E3 %*% E2E1A
+E3E2E1A
+
+L <- solve(E1) %*% solve(E2) %*% solve(E3)
+L
+U <- E3E2E1A
+U
+LU <- L %*% U
+LU
+
+###A를 LU분해하고 동차연립방정식의 답을 구하시오
+A <- matrix(c(
+6, 2, 2,
+2, 2, 0,
+2, 0, 2
+), byrow=TRUE, nr=3)
+
+E1 <- diag(3)
+E1[2,1] <- -1/3
+E1A <- E1 %*% A
+E1A
+
+E2 <- diag(3)
+E2[3,1] <- -1/3
+E2E1A <- E2 %*% E1A
+E2E1A
+
+E3 <- diag(3)
+E3[3,2] <- 1/3
+E3E2E1A <- E3 %*% E2E1A
+E3E2E1A
+
+L <- solve(E1) %*% solve(E2) %*% solve(E3)
+L
+U <- E3E2E1A
+U
+LU <- L %*% U
+LU
+
+solve(A, c(0,0,0))
+det(A)
+invA <- solve(A)
+invA
+```
+## 최소제곱법
+### 1
+```{r}
+###Ax=b의 답을 구하시오(손으로 풀고 R로 프로그램하여 확인)
+b <- c(60,0,20)
+x <- b %*% solve(A)
+x
+```
+
+### 2
+```{r}
+###연립방정식 Xb=y에 대하여 답하시오
+X = matrix(c(
+  1,1,
+  1,2,
+  1,0), byrow=TRUE, nr=3)
+y <- c(1,2,3)
+```
+미지수의 수는 몇 개인가 ? 2개
+방정식의 수는 몇 개인가 ? 3개
+연립방정식의 답은 존재하는가 ? 존재 한다면 답을 쓰시오. 없음
+```{r}
+XTX <- t(X) %*% X
+XTX
+XTy <- t(X) %*% y
+XTy
+cbind(XTX, XTy)
+```
+미지수의 수는 몇 개인가 ? 2개
+방정식의 수는 몇 개인가 ? 2
+연립방정식의 답은 존재하는가 ? 존재 한다면 답을 쓰시오. (5/2, -1/2)
+
+### 3
+```{r}
+X <- matrix(c(
+1,1,0,
+1,1,0,
+1,0,1,
+1,0,1,
+1,0,0,
+1,0,0
+), byrow=TRUE, nc=3)
+y <- c(-1,1,9,11,19,21)
+cbind(X,y)
+```
+다음 연립방정식 은 답이 없다.
+미지수의 수는 몇 개인가 ? 3
+방정식의 수는 몇 개인가 ? 6
+연립방정식의 답은 존재하는가 ? (존재 안하니 애쓰지 말 것)
+```{r}
+XTX <- t(X) %*% X
+XTX
+XTy <- t(X) %*% y
+XTy
+cbind(XTX, XTy)
+### XTXB=XTy의 답
+b <- solve(XTX, XTy)
+b
+### y값 
+yh <- X %*% b
+yh
+###잔차와 잔차제곱합
+res <- y-yh
+res
+sse <- sum(res^2)
+sse
+```
+

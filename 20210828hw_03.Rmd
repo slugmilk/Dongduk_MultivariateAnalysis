@@ -1,0 +1,119 @@
+---
+title: "20210838hw_03"
+output: html_document
+date: "2023-11-17"
+---
+
+```{r}
+op <- par(no.readonly = TRUE)
+library(tidyverse)
+```
+```{r}
+library(corrplot)
+job <- read.csv("D:/유민 동덕/23-2/다변량분석/job.csv")
+summary(job)
+```
+```{r}
+X <- dplyr::select(job, starts_with('x'))
+Y <- dplyr::select(job, starts_with('y'))
+
+X <- rename(X, x1variety=x1, x2feedback=x2, x3autonomy=x3)
+Y <- rename(Y, y1career=y1, y2supervisor=y2, y3finance=y3)
+
+R <- cor(cbind(X, Y))
+print(R, digits = 3)
+```
+```{r}
+corrplot.mixed(R, upper='ellipse')
+```
+```{r}
+#install.packages("CCA")
+suppressMessages(library(CCA))
+```
+```{r}
+head(cbind(X, Y))
+round(cor(cbind(X, Y)), 3)
+Mcc <- cc(X,Y)
+Mcc
+```
+```{r}
+Mcc$cor
+Mcc$xcoef # x집단, 원 정준계수
+Mcc$ycoef # y집단, 원 정준계수
+
+Mcc$xcoef*sapply(X, sd) #x집단 표준화된 정준계수
+Mcc$ycoef*sapply(Y, sd) # y집단, 표준화된 정준계수
+
+#x의 정준변수의 점수
+CVX <- Mcc$scores$xscores 
+colnames(CVX) <- c('eta1', 'eta2', 'eta3')
+
+#y의 정준변수의 점수
+CVY <- Mcc$scores$yscores 
+colnames(CVY) <- c('phi1', 'phi2', 'phi3')
+
+# 모든 변수간 상관행렬
+RR <- cor(cbind(X, Y, CVX, CVY))
+round(RR, 3)
+
+corrplot.mixed(RR, upper='ellipse')
+
+#정준변수간 산점도
+pairs(cbind(CVX, CVY))
+```
+```{r}
+#공헌도: 전체분산 중 첫 m개의 정준변수에 의해 설명되는 비율
+## 표준화된 X의 전분산(;p) 중 X의 정준변수로 설명되는 분산의 비율
+### Standardized Variance of X explained by CVX
+Rxeta <- Mcc$scores$corr.X.xscores
+XCANVAD <- colSums(Rxeta^2)/ncol(CVX)
+data.frame(XCANVAD, Cumul=cumsum(XCANVAD))
+```
+```{r}
+## 표준화된 Y의 전분산(;q) 중 Y의 정준변수로 설명되는 분산의 비율
+## Standardized Variance of Y explained by CVY
+Ryphi <- Mcc$scores$corr.Y.yscores
+YCANVAD <- colSums(Ryphi^2)/ncol(CVY)
+data.frame(YCANVAD, Cumul=cumsum(YCANVAD))
+```
+```{r}
+#근사도
+tibble(ccor=Mcc$cor,
+       ccorsq=ccor^2,
+       cumccorsq=cumsum(ccorsq),
+       G=cumsum(ccorsq)/sum(ccorsq))
+```
+```{r}
+#첫번째 정준점수짝에 대한 산점도
+plot(CVX[,1], CVY[,1], xlab='eta1', ylab = 'pha1')
+abline(v=0, h=0, lty=2)
+text(CVX[,1], CVY[,1], labels = 1:nrow(CVX), pos=4)
+```
+```{r}
+CV <- data.frame(cbind(CVX, CVY))
+ggplot(CV, aes(x=eta1, y=phi1, label=rownames(CV))) +
+  geom_point() +
+  geom_text(hjust=-0.5) +
+  geom_hline(yintercept = 0, linetype=2) +
+  geom_vline(xintercept = 0, linetype=2)
+```
+```{r}
+#정준적재 그림: 원변수와 원변수의 정준변수간 상관계수(;정준적재) 그림
+RRR <- rbind(Rxeta, Ryphi)
+round(RRR, 3)
+
+plot(RRR[,1:2], xlim=c(-1,1), ylim=c(-1,1), xlab='첫번째 정준적제', ylab='두번쨰 정준적재')
+abline(v=0, h=0, lty=2)
+text(RRR[,1:2], labels=rownames(RRR), pos=4)
+```
+
+
+
+
+
+
+
+
+
+
+
